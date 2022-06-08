@@ -13,8 +13,6 @@ namespace ariel
         Node *head;
         OrgChart &add_root(const string &root);
         OrgChart &add_sub(const string& bos, string object);
-        vector<Node*> *lvls;
-        size_t highest_lvl;
 
         OrgChart()
         {            
@@ -22,31 +20,26 @@ namespace ariel
         }
 
         class Iterator
-        {
-
-        private:
-            
+        {            
 
         public:
-            // Node *pitr;
             vector<Node*>* v_it;
-            // OrgChart *this_one;
             Node* end_NULL;
             size_t index;
 
             Iterator(vector<Node*>* v)
             {   this->v_it=v;
-                // this->pitr = NULL;
                 this->end_NULL=NULL;
                 this->index=0;
             }
             Iterator(){
                 this->end_NULL=NULL;
                 this->v_it=NULL;
-               this->index=0;
+                this->index=0;
             }
             ~Iterator();
             Iterator &operator++();
+            Iterator &operator--();
             bool operator!=(const Iterator &other) const;
             bool operator==(const Iterator &other) const;
             string *operator->()const;

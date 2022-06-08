@@ -9,29 +9,33 @@ namespace ariel
 
     OrgChart &OrgChart::add_root(const string &root)
     {
+        if (root.length() == 0)
+        {
+            throw runtime_error("cant add with no name");
+        }
         if (this->head == NULL)
         {
             Node *new_root = new Node;
             new_root->data = root;
-            new_root->my_idChild = 0;
-            new_root->my_lvl = 0;
-            new_root->next = NULL;
-            this->highest_lvl = 0;
             new_root->Lower_Lvl_Arr = new vector<Node *>;
             this->head = new_root;
-            this->lvls = new vector<Node *>;
-            this->lvls->push_back(new_root);
             return *this;
         }
 
         this->head->data = root;
         return *this;
     }
-
+    /**
+     * @brief we want to find the node of the bos
+     *
+     * @param bos
+     * @param root
+     * @return Node of the bos
+     */
     Node *OrgChart::DFS_get_bos(const string &bos, Node *root)
     {
         if (root->data == bos)
-        { // for the first time
+        {
             return root;
         }
         Node *temp = root;
@@ -53,6 +57,10 @@ namespace ariel
 
     OrgChart &OrgChart::add_sub(const string &bos, string object)
     {
+        if (object.length() == 0)
+        {
+            throw runtime_error("cant add with no name");
+        }
         if (this->head == NULL)
         {
             throw runtime_error("no root");
@@ -65,41 +73,19 @@ namespace ariel
         Node *add = new Node;
         add->data = move(object);
         add->father = temp;
-        add->next = NULL;
-        add->my_lvl = temp->my_lvl + 1;
         add->Lower_Lvl_Arr = new vector<Node *>;
-        add->my_idChild = temp->Lower_Lvl_Arr->size();
         temp->Lower_Lvl_Arr->push_back(add);
-
-        if (this->highest_lvl < add->my_lvl)
-        { // if he the first in this lvl
-            this->lvls->push_back(add);
-        }
-        else
-        {
-            Node *temp2 = this->lvls->at(add->my_lvl);
-            while (temp2->next != NULL)
-            {
-                temp2 = temp2->next;
-            }
-            temp->next = add; // put add in the end
-        }
-
-        if (add->my_lvl > this->highest_lvl) // save the highest lvl
-        {
-            this->highest_lvl = add->my_lvl;
-        }
 
         return *this;
     }
     OrgChart::Iterator OrgChart::begin_level_order() const
-    {
+    { // use bfs to get the lvl order
         if (this->head == NULL)
         {
             throw runtime_error("empt tree");
         }
-        vector<Node *> *v = new vector<Node *>;
-        queue<Node *> q;
+        vector<Node *> *v = new vector<Node *>; // make vector to save the data
+        queue<Node *> q;                        // queue for the bfs
         q.push(this->head);
         while (!q.empty())
         {
@@ -123,7 +109,7 @@ namespace ariel
         return Iterator();
     }
     OrgChart::Iterator OrgChart::begin_reverse_order() const
-    {
+    { // use bfs and after get the opposite order
         if (this->head == NULL)
         {
             throw runtime_error("empt tree");
@@ -137,7 +123,7 @@ namespace ariel
             Node *temp = q.front();
             q.pop();
             v->push_back(temp); // insert the node to the vector
-            
+
             for (int i = (int)temp->Lower_Lvl_Arr->size() - 1; i >= 0; i--)
             {
                 q.push(temp->Lower_Lvl_Arr->at((unsigned int)i));
@@ -169,7 +155,7 @@ namespace ariel
         return Iterator();
     }
     OrgChart::Iterator OrgChart::begin_preorder() const
-    {
+    { // use dfs for return the order and insert to the vector
         if (this->head == NULL)
         {
             throw runtime_error("empt tree");
@@ -205,13 +191,13 @@ namespace ariel
                     output << temp->Lower_Lvl_Arr->at(i)->data << " , ";
                 }
             }
-            output << "\n";
+            output << "\n"; // for the next obj
         }
 
         return output;
     }
     OrgChart::Iterator OrgChart::begin() const
-    {
+    { // use bfs for this iterator
         if (this->head == NULL)
         {
             throw runtime_error("empt tree");
@@ -253,7 +239,19 @@ namespace ariel
         this->index++;
         return *this;
     }
-
+    OrgChart::Iterator &OrgChart::Iterator::operator--()
+    {
+        if (this->v_it == NULL)
+        {
+            return *this;
+        }
+        if (this->index >0)
+        {
+            return *this;
+        }
+        this->index--;
+        return *this;
+    }
     bool OrgChart::Iterator::operator!=(const Iterator &other) const
     {
         if (this->v_it == NULL)
@@ -283,6 +281,7 @@ namespace ariel
         }
         return (this->v_it->at(this->index)->data);
     }
+
     OrgChart::Iterator::~Iterator()
     {
         delete (this->v_it);
@@ -294,15 +293,13 @@ namespace ariel
             if (this->head == NULL)
             {
                 return;
-            }
+            } // use the iterator we have for delete all the nodes
             for (OrgChart::Iterator it = begin_level_order(); it != this->end_level_order(); ++it)
             {
                 Node *temp = it.v_it->at(it.index);
-                delete (temp->Lower_Lvl_Arr);
-                delete (temp);
+                delete (temp->Lower_Lvl_Arr); // delete the vector of the kids
+                delete (temp);                // delete the node
             }
-            this->highest_lvl = 0;
-            delete (this->lvls);
         }
         catch (const std::exception &e)
         {
@@ -310,20 +307,21 @@ namespace ariel
         }
     };
 }
-// int main(){
-// using namespace ariel;
-//
-//   OrgChart org1;
-//
-//   org1.add_root("dad").
-//   add_sub("dad","son").
-//   add_sub("dad","son2").
-//   add_sub("son","sonson");
-//
-//   cout<<org1<<endl;
+// int main()
+// {
+//     using namespace ariel;
 
-//   for(auto it:org1){
-//       cout<<*it<<",";
-//   }
+//     OrgChart org1;
 
+//     org1.add_root("dad")
+//     .add_sub("dad", "son")
+//     .add_sub("dad", "son2")
+//     .add_sub("son", "sonson");
+
+//     cout << org1 << endl;
+
+//     for (auto it = org1.begin_preorder(); it != org1.end_preorder(); ++it)
+//     {
+//         cout << (*it) << " ";
+//     }
 // }
